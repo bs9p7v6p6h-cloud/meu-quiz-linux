@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafio Linux Master</title>
+    <style>
+        :root { --p: #f1c40f; --bg: #1a1a1a; --txt: #eee; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--txt); padding: 20px; display: flex; justify-content: center; }
+        .card { background: #222; padding: 25px; border-radius: 15px; width: 100%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
+        button { background: var(--p); border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 10px; }
+        .hidden { display: none; }
+        .opt { background: #333; padding: 10px; margin: 8px 0; border-radius: 8px; cursor: pointer; border: 1px solid #444; }
+        .opt:hover { background: #444; }
+        .selected { border-color: var(--p); background: #444; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid #444; text-align: left; }
+        th { color: var(--p); }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div id="screen-login">
+        <h1> 💻Linux,você realmente aprendeu?</h1>
+        <p>Digite seu nome para começar:</p>
+        <input type="text" id="username" placeholder="Seu nome aqui...">
+        <br>
+        <button onclick="startQuiz()">Começar Desafio</button>
+    </div>
+
+    <div id="screen-quiz" class="hidden">
+        <h2 id="q-text">Pergunta?</h2>
+        <div id="options-container"></div>
+        <button id="next-btn" onclick="nextQuestion()" disabled>Responder</button>
+    </div>
+
+    <div id="screen-result" class="hidden">
+        <h2>Ranking de Jogadores</h2>
+        <table>
+            <thead><tr><th>Nome</th><th>Pontos</th></tr></thead>
+            <tbody id="leaderboard-body"></tbody>
+        </table>
+        <button onclick="location.reload()">Refazer Quiz</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "O que é o Linux?", o: ["Um programa de edição", "Um Kernel (núcleo de sistema)", "Uma marca de computador", "Um antivírus"], a: 1 },
+        { q: "Quando o Kernel Linux foi lançado?", o: ["1985", "1995", "1991", "2000"], a: 2 },
+        { q: "Quem fundou o Linux?", o: ["Bill Gates", "Steve Jobs", "Linus Torvalds", "Richard Stallman"], a: 2 },
+        { q: "Qual é uma característica marcante do Linux?", o: ["É pago", "Código Fechado", "Código Aberto (Open Source)", "Só funciona em teclados"], a: 2 },
+        { q: "Qual comando sudo aumenta a segurança?", o: ["Apaga tudo", "Dá permissão de administrador apenas quando necessário", "Desliga o firewall", "Muda a cor da tela"], a: 1 }
+    ];
+
+    let current = 0, score = 0, playerName = "", selected = null;
+
+    function startQuiz() {
+        playerName = document.getElementById('username').value;
+        if (!playerName) return alert("Digite seu nome!");
+        document.getElementById('screen-login').classList.add('hidden');
+        document.getElementById('screen-quiz').classList.remove('hidden');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const qData = questions[current];
+        document.getElementById('q-text').innerText = qData.q;
+        const container = document.getElementById('options-container');
+        container.innerHTML = "";
+        qData.o.forEach((opt, i) => {
+            const div = document.createElement('div');
+            div.className = 'opt';
+            div.innerText = opt;
+            div.onclick = () => {
+                selected = i;
+                document.querySelectorAll('.opt').forEach(el => el.classList.remove('selected'));
+                div.classList.add('selected');
+                document.getElementById('next-btn').disabled = false;
+            };
+            container.appendChild(div);
+        });
+    }
+
+    function nextQuestion() {
+        if (selected === questions[current].a) score++;
+        current++;
+        if (current < questions.length) {
+            selected = null;
+            document.getElementById('next-btn').disabled = true;
+            showQuestion();
+        } else {
+            saveAndShowRank();
+        }
+    }
+
+    function saveAndShowRank() {
+        // Salva no navegador
+        let history = JSON.parse(localStorage.getItem('linuxRank')) || [];
+        history.push({ name: playerName, points: score });
+        history.sort((a, b) => b.points - a.points); // Organiza do maior para o menor
+        localStorage.setItem('linuxRank', JSON.stringify(history));
+
+        document.getElementById('screen-quiz').classList.add('hidden');
+        document.getElementById('screen-result').classList.remove('hidden');
+
+        const body = document.getElementById('leaderboard-body');
+        body.innerHTML = history.map(user => `<tr><td>${user.name}</td><td>${user.points}/${questions.length}</td></tr>`).join('');
+    }
+</script>
+</body>
+</html>
